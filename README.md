@@ -28,7 +28,7 @@ El diseño fue realizado bajo criterios de arquitectura profesional de bases de 
 
 ---
 
-## 🧠 2. Interpretación del Enunciado
+## 2. Interpretación del Enunciado
 
 El enunciado describe un sistema bancario con:
 
@@ -55,9 +55,9 @@ Se transformó la narrativa de negocio en un modelo relacional estructurado.
 
 ---
 
-## 🏗 3. Decisiones de Arquitectura
+## 3. Decisiones de Arquitectura
 
-### 🔹 Separación de Clientes
+###  Separación de Clientes
 
 Se decidió separar:
 - cliente_persona
@@ -70,7 +70,7 @@ Porque:
 
 ---
 
-### 🔹 Tabla usuario_sistema Centralizada
+###  Tabla usuario_sistema Centralizada
 
 Todos los usuarios (internos y externos) comparten una estructura común.
 
@@ -89,7 +89,7 @@ Esto permite:
 
 ---
 
-### 🔹 Catálogos Separados
+###  Catálogos Separados
 
 Se crearon:
 - rol_sistema
@@ -103,7 +103,7 @@ Ventajas:
 
 ---
 
-### 🔹 Flujos de Aprobación
+### Flujos de Aprobación
 
 Se modelaron mediante:
 - Campos de estado (FK)
@@ -118,7 +118,7 @@ Esto permite:
 
 ---
 
-### 🔹 Bitácora de Operaciones
+###  Bitácora de Operaciones
 
 Tabla:
 bitacora_operaciones
@@ -138,7 +138,7 @@ Permite:
 
 ---
 
-## ⚙️ 4. Integridad y Seguridad Implementada
+## 4. Integridad y Seguridad Implementada
 
 Se aplicaron:
 
@@ -154,7 +154,7 @@ Se aplicaron:
 
 ---
 
-## 📈 5. Índices Estratégicos
+## 5. Índices Estratégicos
 
 Se indexaron:
 
