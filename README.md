@@ -1,4 +1,4 @@
-#  Banco Core – Sistema de Gestión Bancaria (PostgreSQL)
+# Banco Core – Sistema de Gestión Bancaria (PostgreSQL)
 
 ## Grupo 800 | ET0062 - BASES DE DATOS II | Emmanuel Berrio Jimenez
 
@@ -20,6 +20,7 @@ El sistema gestiona:
 - Catálogos centralizados
 
 El diseño fue realizado bajo criterios de arquitectura profesional de bases de datos:
+
 - Normalización (3FN)
 - Integridad referencial estricta
 - Indexación estratégica
@@ -28,7 +29,36 @@ El diseño fue realizado bajo criterios de arquitectura profesional de bases de 
 
 ---
 
-## 2. Interpretación del Enunciado
+## 2. Importación de la Base de Datos
+
+Para importar la base de datos en PostgreSQL utilizando pgAdmin 4:
+
+1. **Abrir pgAdmin 4** y conectarse al servidor de PostgreSQL.
+
+2. **Crear una nueva base de datos** (si aún no existe):
+   - Click derecho en "Databases" → "Create" → "Database"
+   - Nombre: `banco_core`
+   - Owner: `postgres`
+   - Click en "Save"
+
+3. **Importar el archivo de respaldo**:
+   - Click derecho en la base de datos `banco_core`
+   - Seleccionar "Restore..."
+   - En "Filename", buscar y seleccionar el archivo `banco_core`
+   - En "Role name", seleccionar: **postgres**
+   - En la pestaña "Restore options":
+     - Verificar que esté seleccionado "Pre-data", "Data" y "Post-data"
+   - Click en "Restore"
+
+4. **Verificar la importación**:
+   - Expandir el nodo de la base de datos `banco_core`
+   - Verificar que se hayan creado las tablas en "Schemas" → "public" → "Tables"
+
+> **Nota**: Asegúrese de que el rol `postgres` tenga los permisos necesarios para crear objetos en la base de datos.
+
+---
+
+## 3. Interpretación del Enunciado
 
 El enunciado describe un sistema bancario con:
 
@@ -55,22 +85,24 @@ Se transformó la narrativa de negocio en un modelo relacional estructurado.
 
 ---
 
-## 3. Decisiones de Arquitectura
+## 4. Decisiones de Arquitectura
 
-###  Separación de Clientes
+### Separación de Clientes
 
 Se decidió separar:
+
 - cliente_persona
 - cliente_empresa
 
 Porque:
+
 - Tienen atributos distintos.
 - Permite escalabilidad futura.
 - Evita columnas NULL innecesarias.
 
 ---
 
-###  Tabla usuario_sistema Centralizada
+### Tabla usuario_sistema Centralizada
 
 Todos los usuarios (internos y externos) comparten una estructura común.
 
@@ -78,25 +110,29 @@ Se creó:
 usuario_sistema
 
 Con:
+
 - id_rol (FK)
 - id_estado (FK)
 - tipo_relacion (PERSONA / EMPRESA)
 
 Esto permite:
+
 - Control de acceso por rol.
 - Desactivar usuarios sin eliminarlos.
 - Auditoría completa.
 
 ---
 
-###  Catálogos Separados
+### Catálogos Separados
 
 Se crearon:
+
 - rol_sistema
 - estado_general
 - producto_bancario
 
 Ventajas:
+
 - Evita hardcodeo.
 - Permite crecimiento.
 - Mejora integridad.
@@ -106,24 +142,27 @@ Ventajas:
 ### Flujos de Aprobación
 
 Se modelaron mediante:
+
 - Campos de estado (FK)
 - id_usuario_creador
 - id_usuario_aprobador
 - fechas de aprobación
 
 Esto permite:
+
 - Trazabilidad completa.
 - Auditoría.
 - Control de responsabilidades.
 
 ---
 
-###  Bitácora de Operaciones
+### Bitácora de Operaciones
 
 Tabla:
 bitacora_operaciones
 
 Registra:
+
 - Entidad afectada
 - ID entidad
 - Acción
@@ -132,13 +171,14 @@ Registra:
 - Detalle
 
 Permite:
+
 - Cumplimiento normativo
 - Auditoría financiera
 - Historial completo
 
 ---
 
-## 4. Integridad y Seguridad Implementada
+## 5. Integridad y Seguridad Implementada
 
 Se aplicaron:
 
@@ -154,7 +194,7 @@ Se aplicaron:
 
 ---
 
-## 5. Índices Estratégicos
+## 6. Índices Estratégicos
 
 Se indexaron:
 
@@ -172,11 +212,11 @@ Optimizar búsquedas frecuentes y joins.
 
 ---
 
-# 6. Consultas Implementadas
+# 7. Consultas Implementadas
 
 ---
 
-## 6.1 Subconsultas (3)
+## 7.1 Subconsultas (3)
 
 ### Clientes con préstamos aprobados
 
@@ -188,9 +228,10 @@ WHERE id_persona IN (
     FROM prestamo
     WHERE monto_aprobado IS NOT NULL
 );
- ```
+```
 
 ### Cuentas con saldo mayor al promedio
+
 ```sql
 SELECT numero_cuenta, saldo_actual
 FROM cuenta_bancaria
@@ -200,6 +241,7 @@ WHERE saldo_actual > (
 ```
 
 ### Transferencias mayores al máximo del mes anterior
+
 ```sql
 SELECT *
 FROM transferencia
@@ -210,7 +252,8 @@ WHERE monto > (
 );
 ```
 
-### 6.2 Consultas con Filtro de Igualación (3)
+### 7.2 Consultas con Filtro de Igualación (3)
+
 ```sql
 SELECT * FROM cuenta_bancaria
 WHERE moneda = 'COP';
@@ -222,7 +265,8 @@ SELECT * FROM usuario_sistema
 WHERE id_rol = 2;
 ```
 
-### 6.3 INNER JOIN (3)
+### 7.3 INNER JOIN (3)
+
 ```sql
 SELECT t.id_transferencia, u.nombre_completo
 FROM transferencia t
@@ -240,7 +284,8 @@ JOIN rol_sistema r
 ON u.id_rol = r.id_rol;
 ```
 
-### 6.4 LEFT JOIN (3)
+### 7.4 LEFT JOIN (3)
+
 ```sql
 SELECT c.numero_cuenta, t.id_transferencia
 FROM cuenta_bancaria c
@@ -258,7 +303,8 @@ LEFT JOIN transferencia t
 ON u.id_usuario = t.id_usuario_aprobador;
 ```
 
-### 6.5 RIGHT JOIN (3)
+### 7.5 RIGHT JOIN (3)
+
 ```sql
 SELECT t.id_transferencia, c.numero_cuenta
 FROM transferencia t
@@ -275,5 +321,7 @@ FROM transferencia t
 RIGHT JOIN usuario_sistema u
 ON t.id_usuario_creador = u.id_usuario;
 ```
+
 ### Creado por:
+
 Emmanuel Berrio Jimenez
