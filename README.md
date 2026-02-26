@@ -1,225 +1,160 @@
 # Banco Core – Sistema de Gestión Bancaria (PostgreSQL)
 
-## Grupo 800 | ET0062 - BASES DE DATOS II | Emmanuel Berrio Jimenez
+**Grupo 800 | ET0062 - Bases de Datos II**  
+**Emmanuel Berrio Jimenez**
 
 ---
 
 ## 1. Descripción del Proyecto
 
-Este proyecto consiste en el diseño e implementación de una base de datos relacional en PostgreSQL para soportar el core transaccional de una entidad bancaria.
+Diseño e implementación de una base de datos relacional en **PostgreSQL 18** para soportar el core transaccional de una entidad bancaria.
 
-El sistema gestiona:
+| Módulo | Descripción |
+|---|---|
+| Clientes | Persona natural y empresa |
+| Usuarios | Control de acceso por roles |
+| Cuentas bancarias | Ahorros, corriente, empresarial |
+| Préstamos | Flujo de solicitud, aprobación y desembolso |
+| Transferencias | Con control de autorización |
+| Bitácora | Registro de auditoría de operaciones |
+| Catálogos | Roles, estados y productos centralizados |
 
-- Clientes Persona Natural
-- Clientes Empresa
-- Usuarios del sistema con roles
-- Cuentas bancarias
-- Préstamos con flujo de aprobación
-- Transferencias con control de autorización
-- Bitácora de operaciones
-- Catálogos centralizados
-
-El diseño fue realizado bajo criterios de arquitectura profesional de bases de datos:
-
-- Normalización (3FN)
-- Integridad referencial estricta
-- Indexación estratégica
-- Separación de responsabilidades
-- Preparación para escalabilidad
+**Criterios de diseño:** Normalización (3FN) · Integridad referencial · Indexación estratégica · Escalabilidad
 
 ---
 
 ## 2. Importación de la Base de Datos
 
-Para importar la base de datos en PostgreSQL utilizando pgAdmin 4:
+### Requisitos
+- PostgreSQL 18
+- pgAdmin 4
 
-1. **Abrir pgAdmin 4** y conectarse al servidor de PostgreSQL.
+### Pasos
 
-2. **Crear una nueva base de datos** (si aún no existe):
-   - Click derecho en "Databases" → "Create" → "Database"
-   - Nombre: `banco_core`
-   - Owner: `postgres`
-   - Click en "Save"
+**1. Crear la base de datos**
 
-3. **Importar el archivo de respaldo**:
-   - Click derecho en la base de datos `banco_core`
-   - Seleccionar "Restore..."
-   - En "Filename", buscar y seleccionar el archivo `banco_core`
-   - En "Role name", seleccionar: **postgres**
-   - En la pestaña "Restore options":
-     - Verificar que esté seleccionado "Pre-data", "Data" y "Post-data"
-   - Click en "Restore"
+- En pgAdmin 4, click derecho en **Databases** → **Create** → **Database**
+- Nombre: `banco_core`
+- Owner: `postgres`
+- Click en **Save**
 
-4. **Verificar la importación**:
-   - Expandir el nodo de la base de datos `banco_core`
-   - Verificar que se hayan creado las tablas en "Schemas" → "public" → "Tables"
+**2. Restaurar el archivo**
 
-> **Nota**: Asegúrese de que el rol `postgres` tenga los permisos necesarios para crear objetos en la base de datos.
+- Click derecho sobre `banco_core` → **Restore...**
+- **Filename:** seleccionar el archivo `banco_core_db` (sin extensión)
+- **Format:** `Custom or tar`
+- **Role name:** `postgres`
+- En la pestaña **Restore options**, activar:
+  - Pre-data
+  - Data
+  - Post-data
+- Click en **Restore**
+
+**3. Verificar**
+
+- Expandir `banco_core` → **Schemas** → **public** → **Tables**
+- Deben aparecer las 10 tablas del sistema
+
+> **Nota:** El archivo `banco_core_db` fue generado con `pg_dump` en formato `custom`. No es un archivo `.sql` plano; debe restaurarse con la opción **Restore...** de pgAdmin, no con **Query Tool**.
 
 ---
 
-## 3. Interpretación del Enunciado
+## 3. Modelo de Datos
 
-El enunciado describe un sistema bancario con:
+### Tablas del sistema
 
-- Múltiples tipos de clientes
-- Múltiples roles con permisos distintos
-- Productos financieros
-- Operaciones con flujos de aprobación
-- Registro obligatorio de auditoría
+| Tabla | Descripción | PK |
+|---|---|---|
+| `rol_sistema` | Catálogo de roles de usuario | `id_rol` |
+| `estado_general` | Catálogo de estados por tipo de entidad | `id_estado` |
+| `producto_bancario` | Catálogo de productos del banco | `codigo_producto` |
+| `cliente_persona` | Clientes persona natural | `id_persona` |
+| `cliente_empresa` | Clientes empresa | `id_empresa` |
+| `usuario_sistema` | Usuarios con rol y estado | `id_usuario` |
+| `cuenta_bancaria` | Cuentas asociadas a clientes | `numero_cuenta` |
+| `prestamo` | Préstamos con flujo de aprobación | `id_prestamo` |
+| `transferencia` | Transferencias entre cuentas | `id_transferencia` |
+| `bitacora_operaciones` | Registro de auditoría | `id_bitacora` |
 
-A partir de la narrativa se identificaron las siguientes entidades principales:
+### Roles del sistema (`rol_sistema`)
 
-1. Cliente Persona Natural
-2. Cliente Empresa
-3. Usuario del Sistema
-4. Cuenta Bancaria
-5. Préstamo
-6. Transferencia
-7. Producto Bancario (Catálogo)
-8. Estados (Catálogo)
-9. Roles del Sistema (Catálogo)
-10. Bitácora de Operaciones
+| ID | Rol |
+|---|---|
+| 1 | CLIENTE_PERSONA |
+| 2 | CLIENTE_EMPRESA |
+| 3 | EMPLEADO_VENTANILLA |
+| 4 | EMPLEADO_COMERCIAL |
+| 5 | EMPLEADO_EMPRESA |
+| 6 | SUPERVISOR_EMPRESA |
+| 7 | ANALISTA_INTERNO |
+| 8 | BACKOFFICE |
+| 9 | ADMIN_SISTEMA |
+| 10 | AUDITOR |
 
-Se transformó la narrativa de negocio en un modelo relacional estructurado.
+### Estados generales (`estado_general`)
+
+| Tipo | Estados |
+|---|---|
+| USUARIO | ACTIVO, INACTIVO, BLOQUEADO, PENDIENTE_VERIFICACION, EN_REVISION, ELIMINADO |
+| CUENTA | ACTIVA, INACTIVA, CERRADA, SUSPENDIDA, EMBARGADA, PENDIENTE_APERTURA, CONGELADA |
+| PRESTAMO | EN_ESTUDIO, PREAPROBADO, APROBADO, RECHAZADO, DESEMBOLSADO, EN_MORA, CANCELADO, REFINANCIADO, PENDIENTE_DOCUMENTOS |
+| TRANSFERENCIA | PENDIENTE, APROBADA, RECHAZADA, EN_REVISION, CANCELADA, PROGRAMADA, PROCESADA, FALLIDA |
 
 ---
 
 ## 4. Decisiones de Arquitectura
 
-### Separación de Clientes
+### Separación de tipos de cliente
 
-Se decidió separar:
+Se crearon tablas independientes `cliente_persona` y `cliente_empresa` porque tienen atributos distintos (NIT vs. identificación, representante legal, etc.), evitando columnas NULL innecesarias y facilitando la escalabilidad.
 
-- cliente_persona
-- cliente_empresa
+### Usuario centralizado
 
-Porque:
+`usuario_sistema` unifica acceso de clientes y empleados bajo un mismo modelo con `id_rol`, `id_estado` y `tipo_relacion (PERSONA | EMPRESA)`. Permite desactivar usuarios sin eliminarlos y mantener auditoría completa.
 
-- Tienen atributos distintos.
-- Permite escalabilidad futura.
-- Evita columnas NULL innecesarias.
+### Catálogos normalizados
 
----
+`rol_sistema`, `estado_general` y `producto_bancario` centralizan los valores evitando hardcodeo y asegurando integridad referencial en todas las entidades.
 
-### Tabla usuario_sistema Centralizada
+### Flujos de aprobación
 
-Todos los usuarios (internos y externos) comparten una estructura común.
+Préstamos y transferencias incluyen `id_usuario_creador`, `id_usuario_aprobador` y fechas de aprobación como FK, garantizando trazabilidad completa del ciclo de vida de cada operación.
 
-Se creó:
-usuario_sistema
+### Bitácora de operaciones
 
-Con:
-
-- id_rol (FK)
-- id_estado (FK)
-- tipo_relacion (PERSONA / EMPRESA)
-
-Esto permite:
-
-- Control de acceso por rol.
-- Desactivar usuarios sin eliminarlos.
-- Auditoría completa.
+`bitacora_operaciones` registra entidad afectada, ID, acción, usuario responsable, fecha y detalle. Soporta cumplimiento normativo y auditoría financiera.
 
 ---
 
-### Catálogos Separados
+## 5. Integridad y Restricciones
 
-Se crearon:
-
-- rol_sistema
-- estado_general
-- producto_bancario
-
-Ventajas:
-
-- Evita hardcodeo.
-- Permite crecimiento.
-- Mejora integridad.
-
----
-
-### Flujos de Aprobación
-
-Se modelaron mediante:
-
-- Campos de estado (FK)
-- id_usuario_creador
-- id_usuario_aprobador
-- fechas de aprobación
-
-Esto permite:
-
-- Trazabilidad completa.
-- Auditoría.
-- Control de responsabilidades.
-
----
-
-### Bitácora de Operaciones
-
-Tabla:
-bitacora_operaciones
-
-Registra:
-
-- Entidad afectada
-- ID entidad
-- Acción
-- Usuario responsable
-- Fecha
-- Detalle
-
-Permite:
-
-- Cumplimiento normativo
-- Auditoría financiera
-- Historial completo
-
----
-
-## 5. Integridad y Seguridad Implementada
-
-Se aplicaron:
-
-- PRIMARY KEYS
-- FOREIGN KEYS
-- UNIQUE constraints
-- CHECK constraints
-- Validación de mayoría de edad
-- Validación de correo electrónico
-- Restricción de saldo >= 0
-- Restricción de montos positivos
-- Indexación en campos críticos
+| Tipo | Detalle |
+|---|---|
+| PRIMARY KEY | Todas las tablas |
+| FOREIGN KEY | Relaciones entre todas las entidades |
+| UNIQUE | Identificación, NIT, correo electrónico, número de cuenta |
+| CHECK | Mayoría de edad, formato de teléfono (7–15 dígitos), saldo ≥ 0, monto > 0 |
+| CHECK | `tipo_titular` ∈ {PERSONA, EMPRESA}, `tipo_cliente` ∈ {PERSONA, EMPRESA} |
 
 ---
 
 ## 6. Índices Estratégicos
 
-Se indexaron:
+Campos indexados para optimizar búsquedas frecuentes y joins:
 
-- Identificaciones
-- NIT
-- Estados
-- Roles
-- Relaciones FK
-- Cuenta origen/destino
-- Cliente solicitante
-- Bitácora por entidad
-
-Objetivo:
-Optimizar búsquedas frecuentes y joins.
+- `numero_identificacion`, `nit`
+- `id_estado`, `id_rol`
+- FK de titular, solicitante y aprobador
+- `cuenta_origen`, `cuenta_destino` en transferencias
+- `entidad_afectada` en bitácora
 
 ---
 
-# 7. Consultas Implementadas
+## 7. Consultas Implementadas
 
----
+### 7.1 Subconsultas
 
-## 7.1 Subconsultas (3)
-
-### Clientes con préstamos aprobados
-
+**Clientes con préstamos aprobados**
 ```sql
 SELECT nombre_completo
 FROM cliente_persona
@@ -230,8 +165,7 @@ WHERE id_persona IN (
 );
 ```
 
-### Cuentas con saldo mayor al promedio
-
+**Cuentas con saldo mayor al promedio**
 ```sql
 SELECT numero_cuenta, saldo_actual
 FROM cuenta_bancaria
@@ -240,8 +174,7 @@ WHERE saldo_actual > (
 );
 ```
 
-### Transferencias mayores al máximo del mes anterior
-
+**Transferencias mayores al máximo del mes anterior**
 ```sql
 SELECT *
 FROM transferencia
@@ -252,76 +185,87 @@ WHERE monto > (
 );
 ```
 
-### 7.2 Consultas con Filtro de Igualación (3)
+---
+
+### 7.2 Filtro de Igualación
 
 ```sql
+-- Cuentas en pesos colombianos
 SELECT * FROM cuenta_bancaria
 WHERE moneda = 'COP';
 
+-- Préstamos a 12 meses
 SELECT * FROM prestamo
 WHERE plazo_meses = 12;
 
+-- Usuarios con rol CLIENTE_EMPRESA
 SELECT * FROM usuario_sistema
 WHERE id_rol = 2;
 ```
 
-### 7.3 INNER JOIN (3)
+---
+
+### 7.3 INNER JOIN
 
 ```sql
+-- Transferencias con el nombre del usuario que las creó
 SELECT t.id_transferencia, u.nombre_completo
 FROM transferencia t
-JOIN usuario_sistema u
-ON t.id_usuario_creador = u.id_usuario;
+JOIN usuario_sistema u ON t.id_usuario_creador = u.id_usuario;
 
+-- Préstamos con la cuenta de desembolso
 SELECT p.id_prestamo, c.numero_cuenta
 FROM prestamo p
-JOIN cuenta_bancaria c
-ON p.cuenta_destino_desembolso = c.numero_cuenta;
+JOIN cuenta_bancaria c ON p.cuenta_destino_desembolso = c.numero_cuenta;
 
+-- Usuarios con su rol
 SELECT u.nombre_completo, r.nombre_rol
 FROM usuario_sistema u
-JOIN rol_sistema r
-ON u.id_rol = r.id_rol;
+JOIN rol_sistema r ON u.id_rol = r.id_rol;
 ```
 
-### 7.4 LEFT JOIN (3)
+---
+
+### 7.4 LEFT JOIN
 
 ```sql
+-- Cuentas y sus transferencias salientes (incluye cuentas sin transferencias)
 SELECT c.numero_cuenta, t.id_transferencia
 FROM cuenta_bancaria c
-LEFT JOIN transferencia t
-ON c.numero_cuenta = t.cuenta_origen;
+LEFT JOIN transferencia t ON c.numero_cuenta = t.cuenta_origen;
 
+-- Préstamos y su historial en bitácora
 SELECT p.id_prestamo, b.detalle
 FROM prestamo p
-LEFT JOIN bitacora_operaciones b
-ON p.id_prestamo = b.id_entidad;
+LEFT JOIN bitacora_operaciones b ON p.id_prestamo = b.id_entidad;
 
+-- Usuarios y transferencias que han aprobado
 SELECT u.nombre_completo, t.id_transferencia
 FROM usuario_sistema u
-LEFT JOIN transferencia t
-ON u.id_usuario = t.id_usuario_aprobador;
+LEFT JOIN transferencia t ON u.id_usuario = t.id_usuario_aprobador;
 ```
 
-### 7.5 RIGHT JOIN (3)
+---
+
+### 7.5 RIGHT JOIN
 
 ```sql
+-- Transferencias por cuenta (incluye cuentas sin transferencias salientes)
 SELECT t.id_transferencia, c.numero_cuenta
 FROM transferencia t
-RIGHT JOIN cuenta_bancaria c
-ON t.cuenta_origen = c.numero_cuenta;
+RIGHT JOIN cuenta_bancaria c ON t.cuenta_origen = c.numero_cuenta;
 
+-- Bitácora de cada préstamo (incluye préstamos sin registro)
 SELECT b.id_bitacora, p.id_prestamo
 FROM bitacora_operaciones b
-RIGHT JOIN prestamo p
-ON b.id_entidad = p.id_prestamo;
+RIGHT JOIN prestamo p ON b.id_entidad = p.id_prestamo;
 
+-- Transferencias por usuario creador (incluye todos los usuarios)
 SELECT t.id_transferencia, u.nombre_completo
 FROM transferencia t
-RIGHT JOIN usuario_sistema u
-ON t.id_usuario_creador = u.id_usuario;
+RIGHT JOIN usuario_sistema u ON t.id_usuario_creador = u.id_usuario;
 ```
 
-### Creado por:
+---
 
-Emmanuel Berrio Jimenez
+*Creado por Emmanuel Berrio Jimenez — ET0062 Bases de Datos II*
