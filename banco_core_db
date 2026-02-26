@@ -1,0 +1,1281 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict jMVRNDzRanTj23W24aDiIJWPuqNBeZhzknHQ2B9A2yeTvZpB8HLSVU7mxiqRRss
+
+-- Dumped from database version 18.0
+-- Dumped by pg_dump version 18.0
+
+-- Started on 2026-02-25 21:22:07
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 236 (class 1259 OID 25046)
+-- Name: bitacora_operaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bitacora_operaciones (
+    id_bitacora integer NOT NULL,
+    entidad_afectada character varying(50) NOT NULL,
+    id_entidad integer NOT NULL,
+    accion character varying(50) NOT NULL,
+    usuario_responsable integer,
+    fecha_evento timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    detalle text
+);
+
+
+ALTER TABLE public.bitacora_operaciones OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1259 OID 25045)
+-- Name: bitacora_operaciones_id_bitacora_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bitacora_operaciones_id_bitacora_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.bitacora_operaciones_id_bitacora_seq OWNER TO postgres;
+
+--
+-- TOC entry 5137 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: bitacora_operaciones_id_bitacora_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bitacora_operaciones_id_bitacora_seq OWNED BY public.bitacora_operaciones.id_bitacora;
+
+
+--
+-- TOC entry 227 (class 1259 OID 24890)
+-- Name: cliente_empresa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cliente_empresa (
+    id_empresa integer NOT NULL,
+    nit character varying(20) NOT NULL,
+    razon_social character varying(200) NOT NULL,
+    correo_electronico character varying(150) NOT NULL,
+    telefono character varying(15) NOT NULL,
+    direccion text NOT NULL,
+    representante_legal_id integer NOT NULL,
+    CONSTRAINT cliente_empresa_correo_electronico_check CHECK (((correo_electronico)::text ~~ '%@%'::text)),
+    CONSTRAINT cliente_empresa_telefono_check CHECK (((char_length((telefono)::text) >= 7) AND (char_length((telefono)::text) <= 15)))
+);
+
+
+ALTER TABLE public.cliente_empresa OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 24889)
+-- Name: cliente_empresa_id_empresa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cliente_empresa_id_empresa_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cliente_empresa_id_empresa_seq OWNER TO postgres;
+
+--
+-- TOC entry 5138 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: cliente_empresa_id_empresa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cliente_empresa_id_empresa_seq OWNED BY public.cliente_empresa.id_empresa;
+
+
+--
+-- TOC entry 225 (class 1259 OID 24867)
+-- Name: cliente_persona; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cliente_persona (
+    id_persona integer NOT NULL,
+    numero_identificacion character varying(20) NOT NULL,
+    nombre_completo character varying(150) NOT NULL,
+    correo_electronico character varying(150) NOT NULL,
+    telefono character varying(15) NOT NULL,
+    fecha_nacimiento date NOT NULL,
+    direccion text NOT NULL,
+    CONSTRAINT cliente_persona_correo_electronico_check CHECK (((correo_electronico)::text ~~ '%@%'::text)),
+    CONSTRAINT cliente_persona_fecha_nacimiento_check CHECK ((age((fecha_nacimiento)::timestamp with time zone) >= '18 years'::interval)),
+    CONSTRAINT cliente_persona_telefono_check CHECK (((char_length((telefono)::text) >= 7) AND (char_length((telefono)::text) <= 15)))
+);
+
+
+ALTER TABLE public.cliente_persona OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 24866)
+-- Name: cliente_persona_id_persona_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cliente_persona_id_persona_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cliente_persona_id_persona_seq OWNER TO postgres;
+
+--
+-- TOC entry 5139 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: cliente_persona_id_persona_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cliente_persona_id_persona_seq OWNED BY public.cliente_persona.id_persona;
+
+
+--
+-- TOC entry 230 (class 1259 OID 24946)
+-- Name: cuenta_bancaria; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cuenta_bancaria (
+    numero_cuenta character varying(30) NOT NULL,
+    tipo_cuenta character varying(50) NOT NULL,
+    id_titular integer NOT NULL,
+    tipo_titular character varying(20) NOT NULL,
+    saldo_actual numeric(18,2) DEFAULT 0 NOT NULL,
+    moneda character varying(10) NOT NULL,
+    id_estado integer NOT NULL,
+    fecha_apertura date DEFAULT CURRENT_DATE NOT NULL,
+    CONSTRAINT cuenta_bancaria_saldo_actual_check CHECK ((saldo_actual >= (0)::numeric)),
+    CONSTRAINT cuenta_bancaria_tipo_titular_check CHECK (((tipo_titular)::text = ANY ((ARRAY['PERSONA'::character varying, 'EMPRESA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.cuenta_bancaria OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 24846)
+-- Name: estado_general; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estado_general (
+    id_estado integer NOT NULL,
+    tipo_estado character varying(50) NOT NULL,
+    nombre_estado character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.estado_general OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 24845)
+-- Name: estado_general_id_estado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.estado_general_id_estado_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.estado_general_id_estado_seq OWNER TO postgres;
+
+--
+-- TOC entry 5140 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: estado_general_id_estado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.estado_general_id_estado_seq OWNED BY public.estado_general.id_estado;
+
+
+--
+-- TOC entry 232 (class 1259 OID 24971)
+-- Name: prestamo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.prestamo (
+    id_prestamo integer NOT NULL,
+    tipo_prestamo character varying(100) NOT NULL,
+    id_cliente_solicitante integer NOT NULL,
+    tipo_cliente character varying(20) NOT NULL,
+    monto_solicitado numeric(18,2) NOT NULL,
+    monto_aprobado numeric(18,2),
+    tasa_interes numeric(5,2) NOT NULL,
+    plazo_meses integer NOT NULL,
+    id_estado integer NOT NULL,
+    fecha_aprobacion date,
+    fecha_desembolso date,
+    cuenta_destino_desembolso character varying(30),
+    CONSTRAINT prestamo_monto_solicitado_check CHECK ((monto_solicitado > (0)::numeric)),
+    CONSTRAINT prestamo_plazo_meses_check CHECK ((plazo_meses > 0)),
+    CONSTRAINT prestamo_tasa_interes_check CHECK ((tasa_interes > (0)::numeric)),
+    CONSTRAINT prestamo_tipo_cliente_check CHECK (((tipo_cliente)::text = ANY ((ARRAY['PERSONA'::character varying, 'EMPRESA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.prestamo OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1259 OID 24970)
+-- Name: prestamo_id_prestamo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.prestamo_id_prestamo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.prestamo_id_prestamo_seq OWNER TO postgres;
+
+--
+-- TOC entry 5141 (class 0 OID 0)
+-- Dependencies: 231
+-- Name: prestamo_id_prestamo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.prestamo_id_prestamo_seq OWNED BY public.prestamo.id_prestamo;
+
+
+--
+-- TOC entry 223 (class 1259 OID 24856)
+-- Name: producto_bancario; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.producto_bancario (
+    codigo_producto character varying(20) NOT NULL,
+    nombre_producto character varying(150) NOT NULL,
+    categoria character varying(50) NOT NULL,
+    requiere_aprobacion boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.producto_bancario OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 24835)
+-- Name: rol_sistema; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rol_sistema (
+    id_rol integer NOT NULL,
+    nombre_rol character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.rol_sistema OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 24834)
+-- Name: rol_sistema_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.rol_sistema_id_rol_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.rol_sistema_id_rol_seq OWNER TO postgres;
+
+--
+-- TOC entry 5142 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: rol_sistema_id_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.rol_sistema_id_rol_seq OWNED BY public.rol_sistema.id_rol;
+
+
+--
+-- TOC entry 234 (class 1259 OID 25002)
+-- Name: transferencia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.transferencia (
+    id_transferencia integer NOT NULL,
+    cuenta_origen character varying(30) NOT NULL,
+    cuenta_destino character varying(30) NOT NULL,
+    monto numeric(18,2) NOT NULL,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fecha_aprobacion timestamp without time zone,
+    id_estado integer NOT NULL,
+    id_usuario_creador integer NOT NULL,
+    id_usuario_aprobador integer,
+    CONSTRAINT transferencia_monto_check CHECK ((monto > (0)::numeric))
+);
+
+
+ALTER TABLE public.transferencia OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1259 OID 25001)
+-- Name: transferencia_id_transferencia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.transferencia_id_transferencia_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.transferencia_id_transferencia_seq OWNER TO postgres;
+
+--
+-- TOC entry 5143 (class 0 OID 0)
+-- Dependencies: 233
+-- Name: transferencia_id_transferencia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.transferencia_id_transferencia_seq OWNED BY public.transferencia.id_transferencia;
+
+
+--
+-- TOC entry 229 (class 1259 OID 24916)
+-- Name: usuario_sistema; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.usuario_sistema (
+    id_usuario integer NOT NULL,
+    id_relacionado integer NOT NULL,
+    tipo_relacion character varying(20) NOT NULL,
+    nombre_completo character varying(150) NOT NULL,
+    id_identificacion character varying(20) NOT NULL,
+    correo_electronico character varying(150) NOT NULL,
+    telefono character varying(15),
+    fecha_nacimiento date,
+    direccion text,
+    id_rol integer NOT NULL,
+    id_estado integer NOT NULL,
+    CONSTRAINT usuario_sistema_tipo_relacion_check CHECK (((tipo_relacion)::text = ANY ((ARRAY['PERSONA'::character varying, 'EMPRESA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.usuario_sistema OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 24915)
+-- Name: usuario_sistema_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.usuario_sistema_id_usuario_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.usuario_sistema_id_usuario_seq OWNER TO postgres;
+
+--
+-- TOC entry 5144 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: usuario_sistema_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.usuario_sistema_id_usuario_seq OWNED BY public.usuario_sistema.id_usuario;
+
+
+--
+-- TOC entry 4900 (class 2604 OID 25049)
+-- Name: bitacora_operaciones id_bitacora; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bitacora_operaciones ALTER COLUMN id_bitacora SET DEFAULT nextval('public.bitacora_operaciones_id_bitacora_seq'::regclass);
+
+
+--
+-- TOC entry 4893 (class 2604 OID 24893)
+-- Name: cliente_empresa id_empresa; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_empresa ALTER COLUMN id_empresa SET DEFAULT nextval('public.cliente_empresa_id_empresa_seq'::regclass);
+
+
+--
+-- TOC entry 4892 (class 2604 OID 24870)
+-- Name: cliente_persona id_persona; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_persona ALTER COLUMN id_persona SET DEFAULT nextval('public.cliente_persona_id_persona_seq'::regclass);
+
+
+--
+-- TOC entry 4890 (class 2604 OID 24849)
+-- Name: estado_general id_estado; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estado_general ALTER COLUMN id_estado SET DEFAULT nextval('public.estado_general_id_estado_seq'::regclass);
+
+
+--
+-- TOC entry 4897 (class 2604 OID 24974)
+-- Name: prestamo id_prestamo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.prestamo ALTER COLUMN id_prestamo SET DEFAULT nextval('public.prestamo_id_prestamo_seq'::regclass);
+
+
+--
+-- TOC entry 4889 (class 2604 OID 24838)
+-- Name: rol_sistema id_rol; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rol_sistema ALTER COLUMN id_rol SET DEFAULT nextval('public.rol_sistema_id_rol_seq'::regclass);
+
+
+--
+-- TOC entry 4898 (class 2604 OID 25005)
+-- Name: transferencia id_transferencia; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia ALTER COLUMN id_transferencia SET DEFAULT nextval('public.transferencia_id_transferencia_seq'::regclass);
+
+
+--
+-- TOC entry 4894 (class 2604 OID 24919)
+-- Name: usuario_sistema id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario_sistema ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuario_sistema_id_usuario_seq'::regclass);
+
+
+--
+-- TOC entry 5131 (class 0 OID 25046)
+-- Dependencies: 236
+-- Data for Name: bitacora_operaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bitacora_operaciones (id_bitacora, entidad_afectada, id_entidad, accion, usuario_responsable, fecha_evento, detalle) FROM stdin;
+1	PRESTAMO	1	APROBACION	1	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+2	PRESTAMO	2	APROBACION	2	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+3	PRESTAMO	3	APROBACION	3	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+4	PRESTAMO	4	APROBACION	4	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+5	PRESTAMO	5	APROBACION	5	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+6	PRESTAMO	6	APROBACION	6	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+7	PRESTAMO	7	APROBACION	7	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+8	PRESTAMO	8	APROBACION	8	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+9	PRESTAMO	9	APROBACION	9	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+10	PRESTAMO	10	APROBACION	10	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+11	PRESTAMO	11	APROBACION	11	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+12	PRESTAMO	12	APROBACION	12	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+13	PRESTAMO	13	APROBACION	13	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+14	PRESTAMO	14	APROBACION	14	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+15	PRESTAMO	15	APROBACION	15	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+16	PRESTAMO	16	APROBACION	16	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+17	PRESTAMO	17	APROBACION	17	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+18	PRESTAMO	18	APROBACION	18	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+19	PRESTAMO	19	APROBACION	19	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+20	PRESTAMO	20	APROBACION	20	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+21	PRESTAMO	21	APROBACION	21	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+22	PRESTAMO	22	APROBACION	22	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+23	PRESTAMO	23	APROBACION	23	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+24	PRESTAMO	24	APROBACION	24	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+25	PRESTAMO	25	APROBACION	25	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+26	PRESTAMO	26	APROBACION	26	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+27	PRESTAMO	27	APROBACION	27	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+28	PRESTAMO	28	APROBACION	28	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+29	PRESTAMO	29	APROBACION	29	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+30	PRESTAMO	30	APROBACION	30	2026-02-22 18:49:39.202277	Prestamo aprobado correctamente
+\.
+
+
+--
+-- TOC entry 5122 (class 0 OID 24890)
+-- Dependencies: 227
+-- Data for Name: cliente_empresa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cliente_empresa (id_empresa, nit, razon_social, correo_electronico, telefono, direccion, representante_legal_id) FROM stdin;
+1	NIT1	Empresa 1	empresa1@correo.com	3100001	Direccion Empresa 1	1
+2	NIT2	Empresa 2	empresa2@correo.com	3100002	Direccion Empresa 2	2
+3	NIT3	Empresa 3	empresa3@correo.com	3100003	Direccion Empresa 3	3
+4	NIT4	Empresa 4	empresa4@correo.com	3100004	Direccion Empresa 4	4
+5	NIT5	Empresa 5	empresa5@correo.com	3100005	Direccion Empresa 5	5
+6	NIT6	Empresa 6	empresa6@correo.com	3100006	Direccion Empresa 6	6
+7	NIT7	Empresa 7	empresa7@correo.com	3100007	Direccion Empresa 7	7
+8	NIT8	Empresa 8	empresa8@correo.com	3100008	Direccion Empresa 8	8
+9	NIT9	Empresa 9	empresa9@correo.com	3100009	Direccion Empresa 9	9
+10	NIT10	Empresa 10	empresa10@correo.com	31000010	Direccion Empresa 10	10
+11	NIT11	Empresa 11	empresa11@correo.com	31000011	Direccion Empresa 11	11
+12	NIT12	Empresa 12	empresa12@correo.com	31000012	Direccion Empresa 12	12
+13	NIT13	Empresa 13	empresa13@correo.com	31000013	Direccion Empresa 13	13
+14	NIT14	Empresa 14	empresa14@correo.com	31000014	Direccion Empresa 14	14
+15	NIT15	Empresa 15	empresa15@correo.com	31000015	Direccion Empresa 15	15
+16	NIT16	Empresa 16	empresa16@correo.com	31000016	Direccion Empresa 16	16
+17	NIT17	Empresa 17	empresa17@correo.com	31000017	Direccion Empresa 17	17
+18	NIT18	Empresa 18	empresa18@correo.com	31000018	Direccion Empresa 18	18
+19	NIT19	Empresa 19	empresa19@correo.com	31000019	Direccion Empresa 19	19
+20	NIT20	Empresa 20	empresa20@correo.com	31000020	Direccion Empresa 20	20
+21	NIT21	Empresa 21	empresa21@correo.com	31000021	Direccion Empresa 21	21
+22	NIT22	Empresa 22	empresa22@correo.com	31000022	Direccion Empresa 22	22
+23	NIT23	Empresa 23	empresa23@correo.com	31000023	Direccion Empresa 23	23
+24	NIT24	Empresa 24	empresa24@correo.com	31000024	Direccion Empresa 24	24
+25	NIT25	Empresa 25	empresa25@correo.com	31000025	Direccion Empresa 25	25
+26	NIT26	Empresa 26	empresa26@correo.com	31000026	Direccion Empresa 26	26
+27	NIT27	Empresa 27	empresa27@correo.com	31000027	Direccion Empresa 27	27
+28	NIT28	Empresa 28	empresa28@correo.com	31000028	Direccion Empresa 28	28
+29	NIT29	Empresa 29	empresa29@correo.com	31000029	Direccion Empresa 29	29
+30	NIT30	Empresa 30	empresa30@correo.com	31000030	Direccion Empresa 30	30
+\.
+
+
+--
+-- TOC entry 5120 (class 0 OID 24867)
+-- Dependencies: 225
+-- Data for Name: cliente_persona; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cliente_persona (id_persona, numero_identificacion, nombre_completo, correo_electronico, telefono, fecha_nacimiento, direccion) FROM stdin;
+1	CC1	Persona 1	persona1@correo.com	3000001	1990-01-02	Direccion 1
+2	CC2	Persona 2	persona2@correo.com	3000002	1990-01-03	Direccion 2
+3	CC3	Persona 3	persona3@correo.com	3000003	1990-01-04	Direccion 3
+4	CC4	Persona 4	persona4@correo.com	3000004	1990-01-05	Direccion 4
+5	CC5	Persona 5	persona5@correo.com	3000005	1990-01-06	Direccion 5
+6	CC6	Persona 6	persona6@correo.com	3000006	1990-01-07	Direccion 6
+7	CC7	Persona 7	persona7@correo.com	3000007	1990-01-08	Direccion 7
+8	CC8	Persona 8	persona8@correo.com	3000008	1990-01-09	Direccion 8
+9	CC9	Persona 9	persona9@correo.com	3000009	1990-01-10	Direccion 9
+10	CC10	Persona 10	persona10@correo.com	30000010	1990-01-11	Direccion 10
+11	CC11	Persona 11	persona11@correo.com	30000011	1990-01-12	Direccion 11
+12	CC12	Persona 12	persona12@correo.com	30000012	1990-01-13	Direccion 12
+13	CC13	Persona 13	persona13@correo.com	30000013	1990-01-14	Direccion 13
+14	CC14	Persona 14	persona14@correo.com	30000014	1990-01-15	Direccion 14
+15	CC15	Persona 15	persona15@correo.com	30000015	1990-01-16	Direccion 15
+16	CC16	Persona 16	persona16@correo.com	30000016	1990-01-17	Direccion 16
+17	CC17	Persona 17	persona17@correo.com	30000017	1990-01-18	Direccion 17
+18	CC18	Persona 18	persona18@correo.com	30000018	1990-01-19	Direccion 18
+19	CC19	Persona 19	persona19@correo.com	30000019	1990-01-20	Direccion 19
+20	CC20	Persona 20	persona20@correo.com	30000020	1990-01-21	Direccion 20
+21	CC21	Persona 21	persona21@correo.com	30000021	1990-01-22	Direccion 21
+22	CC22	Persona 22	persona22@correo.com	30000022	1990-01-23	Direccion 22
+23	CC23	Persona 23	persona23@correo.com	30000023	1990-01-24	Direccion 23
+24	CC24	Persona 24	persona24@correo.com	30000024	1990-01-25	Direccion 24
+25	CC25	Persona 25	persona25@correo.com	30000025	1990-01-26	Direccion 25
+26	CC26	Persona 26	persona26@correo.com	30000026	1990-01-27	Direccion 26
+27	CC27	Persona 27	persona27@correo.com	30000027	1990-01-28	Direccion 27
+28	CC28	Persona 28	persona28@correo.com	30000028	1990-01-29	Direccion 28
+29	CC29	Persona 29	persona29@correo.com	30000029	1990-01-30	Direccion 29
+30	CC30	Persona 30	persona30@correo.com	30000030	1990-01-31	Direccion 30
+\.
+
+
+--
+-- TOC entry 5125 (class 0 OID 24946)
+-- Dependencies: 230
+-- Data for Name: cuenta_bancaria; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cuenta_bancaria (numero_cuenta, tipo_cuenta, id_titular, tipo_titular, saldo_actual, moneda, id_estado, fecha_apertura) FROM stdin;
+CTA1	Ahorros	1	PERSONA	1010000.00	COP	4	2026-02-22
+CTA2	Ahorros	2	PERSONA	1020000.00	COP	4	2026-02-22
+CTA3	Ahorros	3	PERSONA	1030000.00	COP	4	2026-02-22
+CTA4	Ahorros	4	PERSONA	1040000.00	COP	4	2026-02-22
+CTA5	Ahorros	5	PERSONA	1050000.00	COP	4	2026-02-22
+CTA6	Ahorros	6	PERSONA	1060000.00	COP	4	2026-02-22
+CTA7	Ahorros	7	PERSONA	1070000.00	COP	4	2026-02-22
+CTA8	Ahorros	8	PERSONA	1080000.00	COP	4	2026-02-22
+CTA9	Ahorros	9	PERSONA	1090000.00	COP	4	2026-02-22
+CTA10	Ahorros	10	PERSONA	1100000.00	COP	4	2026-02-22
+CTA11	Ahorros	11	PERSONA	1110000.00	COP	4	2026-02-22
+CTA12	Ahorros	12	PERSONA	1120000.00	COP	4	2026-02-22
+CTA13	Ahorros	13	PERSONA	1130000.00	COP	4	2026-02-22
+CTA14	Ahorros	14	PERSONA	1140000.00	COP	4	2026-02-22
+CTA15	Ahorros	15	PERSONA	1150000.00	COP	4	2026-02-22
+CTA16	Ahorros	16	PERSONA	1160000.00	COP	4	2026-02-22
+CTA17	Ahorros	17	PERSONA	1170000.00	COP	4	2026-02-22
+CTA18	Ahorros	18	PERSONA	1180000.00	COP	4	2026-02-22
+CTA19	Ahorros	19	PERSONA	1190000.00	COP	4	2026-02-22
+CTA20	Ahorros	20	PERSONA	1200000.00	COP	4	2026-02-22
+CTA21	Ahorros	21	PERSONA	1210000.00	COP	4	2026-02-22
+CTA22	Ahorros	22	PERSONA	1220000.00	COP	4	2026-02-22
+CTA23	Ahorros	23	PERSONA	1230000.00	COP	4	2026-02-22
+CTA24	Ahorros	24	PERSONA	1240000.00	COP	4	2026-02-22
+CTA25	Ahorros	25	PERSONA	1250000.00	COP	4	2026-02-22
+CTA26	Ahorros	26	PERSONA	1260000.00	COP	4	2026-02-22
+CTA27	Ahorros	27	PERSONA	1270000.00	COP	4	2026-02-22
+CTA28	Ahorros	28	PERSONA	1280000.00	COP	4	2026-02-22
+CTA29	Ahorros	29	PERSONA	1290000.00	COP	4	2026-02-22
+CTA30	Ahorros	30	PERSONA	1300000.00	COP	4	2026-02-22
+\.
+
+
+--
+-- TOC entry 5117 (class 0 OID 24846)
+-- Dependencies: 222
+-- Data for Name: estado_general; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.estado_general (id_estado, tipo_estado, nombre_estado) FROM stdin;
+1	USUARIO	ACTIVO
+2	USUARIO	INACTIVO
+3	USUARIO	BLOQUEADO
+4	CUENTA	ACTIVA
+5	CUENTA	INACTIVA
+6	CUENTA	CERRADA
+7	PRESTAMO	EN_ESTUDIO
+8	PRESTAMO	APROBADO
+9	PRESTAMO	RECHAZADO
+10	PRESTAMO	DESEMBOLSADO
+11	TRANSFERENCIA	PENDIENTE
+12	TRANSFERENCIA	APROBADA
+13	TRANSFERENCIA	RECHAZADA
+14	PRESTAMO	EN_MORA
+15	PRESTAMO	CANCELADO
+16	TRANSFERENCIA	EN_REVISION
+17	TRANSFERENCIA	CANCELADA
+18	CUENTA	SUSPENDIDA
+19	USUARIO	PENDIENTE_VERIFICACION
+20	USUARIO	ELIMINADO
+21	CUENTA	EMBARGADA
+22	PRESTAMO	REFINANCIADO
+23	TRANSFERENCIA	PROGRAMADA
+24	TRANSFERENCIA	PROCESADA
+25	TRANSFERENCIA	FALLIDA
+26	CUENTA	PENDIENTE_APERTURA
+27	PRESTAMO	PREAPROBADO
+28	PRESTAMO	PENDIENTE_DOCUMENTOS
+29	USUARIO	EN_REVISION
+30	CUENTA	CONGELADA
+\.
+
+
+--
+-- TOC entry 5127 (class 0 OID 24971)
+-- Dependencies: 232
+-- Data for Name: prestamo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.prestamo (id_prestamo, tipo_prestamo, id_cliente_solicitante, tipo_cliente, monto_solicitado, monto_aprobado, tasa_interes, plazo_meses, id_estado, fecha_aprobacion, fecha_desembolso, cuenta_destino_desembolso) FROM stdin;
+1	Consumo	1	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA1
+2	Consumo	2	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA2
+3	Consumo	3	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA3
+4	Consumo	4	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA4
+5	Consumo	5	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA5
+6	Consumo	6	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA6
+7	Consumo	7	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA7
+8	Consumo	8	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA8
+9	Consumo	9	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA9
+10	Consumo	10	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA10
+11	Consumo	11	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA11
+12	Consumo	12	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA12
+13	Consumo	13	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA13
+14	Consumo	14	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA14
+15	Consumo	15	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA15
+16	Consumo	16	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA16
+17	Consumo	17	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA17
+18	Consumo	18	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA18
+19	Consumo	19	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA19
+20	Consumo	20	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA20
+21	Consumo	21	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA21
+22	Consumo	22	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA22
+23	Consumo	23	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA23
+24	Consumo	24	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA24
+25	Consumo	25	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA25
+26	Consumo	26	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA26
+27	Consumo	27	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA27
+28	Consumo	28	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA28
+29	Consumo	29	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA29
+30	Consumo	30	PERSONA	5000000.00	4500000.00	12.50	12	8	2026-02-22	2026-02-22	CTA30
+\.
+
+
+--
+-- TOC entry 5118 (class 0 OID 24856)
+-- Dependencies: 223
+-- Data for Name: producto_bancario; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.producto_bancario (codigo_producto, nombre_producto, categoria, requiere_aprobacion) FROM stdin;
+CTA_AH	Cuenta Ahorros	CUENTAS	f
+CTA_COR	Cuenta Corriente	CUENTAS	f
+CTA_EMP	Cuenta Empresarial	CUENTAS	f
+PRE_CONS	Prestamo Consumo	PRESTAMOS	t
+PRE_HIP	Prestamo Hipotecario	PRESTAMOS	t
+PRE_EMP	Prestamo Empresarial	PRESTAMOS	t
+PRE_VEH	Prestamo Vehiculo	PRESTAMOS	t
+SERV_TRF	Transferencias	SERVICIOS	t
+SERV_PAG	Pagos Masivos	SERVICIOS	t
+SERV_NOM	Nomina	SERVICIOS	t
+PROD11	Producto 11	SERVICIOS	f
+PROD12	Producto 12	SERVICIOS	f
+PROD13	Producto 13	SERVICIOS	f
+PROD14	Producto 14	SERVICIOS	f
+PROD15	Producto 15	SERVICIOS	f
+PROD16	Producto 16	SERVICIOS	f
+PROD17	Producto 17	SERVICIOS	f
+PROD18	Producto 18	SERVICIOS	f
+PROD19	Producto 19	SERVICIOS	f
+PROD20	Producto 20	SERVICIOS	f
+PROD21	Producto 21	SERVICIOS	f
+PROD22	Producto 22	SERVICIOS	f
+PROD23	Producto 23	SERVICIOS	f
+PROD24	Producto 24	SERVICIOS	f
+PROD25	Producto 25	SERVICIOS	f
+PROD26	Producto 26	SERVICIOS	f
+PROD27	Producto 27	SERVICIOS	f
+PROD28	Producto 28	SERVICIOS	f
+PROD29	Producto 29	SERVICIOS	f
+PROD30	Producto 30	SERVICIOS	f
+\.
+
+
+--
+-- TOC entry 5115 (class 0 OID 24835)
+-- Dependencies: 220
+-- Data for Name: rol_sistema; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.rol_sistema (id_rol, nombre_rol) FROM stdin;
+1	CLIENTE_PERSONA
+2	CLIENTE_EMPRESA
+3	EMPLEADO_VENTANILLA
+4	EMPLEADO_COMERCIAL
+5	EMPLEADO_EMPRESA
+6	SUPERVISOR_EMPRESA
+7	ANALISTA_INTERNO
+8	BACKOFFICE
+9	ADMIN_SISTEMA
+10	AUDITOR
+\.
+
+
+--
+-- TOC entry 5129 (class 0 OID 25002)
+-- Dependencies: 234
+-- Data for Name: transferencia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.transferencia (id_transferencia, cuenta_origen, cuenta_destino, monto, fecha_creacion, fecha_aprobacion, id_estado, id_usuario_creador, id_usuario_aprobador) FROM stdin;
+1	CTA1	CTA2	100000.00	2026-02-22 18:49:31.68192	\N	12	1	\N
+2	CTA2	CTA3	100000.00	2026-02-22 18:49:31.68192	\N	12	2	\N
+3	CTA3	CTA4	100000.00	2026-02-22 18:49:31.68192	\N	12	3	\N
+4	CTA4	CTA5	100000.00	2026-02-22 18:49:31.68192	\N	12	4	\N
+5	CTA5	CTA6	100000.00	2026-02-22 18:49:31.68192	\N	12	5	\N
+6	CTA6	CTA7	100000.00	2026-02-22 18:49:31.68192	\N	12	6	\N
+7	CTA7	CTA8	100000.00	2026-02-22 18:49:31.68192	\N	12	7	\N
+8	CTA8	CTA9	100000.00	2026-02-22 18:49:31.68192	\N	12	8	\N
+9	CTA9	CTA10	100000.00	2026-02-22 18:49:31.68192	\N	12	9	\N
+10	CTA10	CTA11	100000.00	2026-02-22 18:49:31.68192	\N	12	10	\N
+11	CTA11	CTA12	100000.00	2026-02-22 18:49:31.68192	\N	12	11	\N
+12	CTA12	CTA13	100000.00	2026-02-22 18:49:31.68192	\N	12	12	\N
+13	CTA13	CTA14	100000.00	2026-02-22 18:49:31.68192	\N	12	13	\N
+14	CTA14	CTA15	100000.00	2026-02-22 18:49:31.68192	\N	12	14	\N
+15	CTA15	CTA16	100000.00	2026-02-22 18:49:31.68192	\N	12	15	\N
+16	CTA16	CTA17	100000.00	2026-02-22 18:49:31.68192	\N	12	16	\N
+17	CTA17	CTA18	100000.00	2026-02-22 18:49:31.68192	\N	12	17	\N
+18	CTA18	CTA19	100000.00	2026-02-22 18:49:31.68192	\N	12	18	\N
+19	CTA19	CTA20	100000.00	2026-02-22 18:49:31.68192	\N	12	19	\N
+20	CTA20	CTA21	100000.00	2026-02-22 18:49:31.68192	\N	12	20	\N
+21	CTA21	CTA22	100000.00	2026-02-22 18:49:31.68192	\N	12	21	\N
+22	CTA22	CTA23	100000.00	2026-02-22 18:49:31.68192	\N	12	22	\N
+23	CTA23	CTA24	100000.00	2026-02-22 18:49:31.68192	\N	12	23	\N
+24	CTA24	CTA25	100000.00	2026-02-22 18:49:31.68192	\N	12	24	\N
+25	CTA25	CTA26	100000.00	2026-02-22 18:49:31.68192	\N	12	25	\N
+26	CTA26	CTA27	100000.00	2026-02-22 18:49:31.68192	\N	12	26	\N
+27	CTA27	CTA28	100000.00	2026-02-22 18:49:31.68192	\N	12	27	\N
+28	CTA28	CTA29	100000.00	2026-02-22 18:49:31.68192	\N	12	28	\N
+29	CTA29	CTA30	100000.00	2026-02-22 18:49:31.68192	\N	12	29	\N
+30	CTA30	CTA1	100000.00	2026-02-22 18:49:31.68192	\N	12	30	\N
+\.
+
+
+--
+-- TOC entry 5124 (class 0 OID 24916)
+-- Dependencies: 229
+-- Data for Name: usuario_sistema; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.usuario_sistema (id_usuario, id_relacionado, tipo_relacion, nombre_completo, id_identificacion, correo_electronico, telefono, fecha_nacimiento, direccion, id_rol, id_estado) FROM stdin;
+1	1	PERSONA	Usuario 1	CC1	user1@correo.com	3200001	1990-01-01	Direccion 1	1	1
+2	2	PERSONA	Usuario 2	CC2	user2@correo.com	3200002	1990-01-01	Direccion 2	1	1
+3	3	PERSONA	Usuario 3	CC3	user3@correo.com	3200003	1990-01-01	Direccion 3	1	1
+4	4	PERSONA	Usuario 4	CC4	user4@correo.com	3200004	1990-01-01	Direccion 4	1	1
+5	5	PERSONA	Usuario 5	CC5	user5@correo.com	3200005	1990-01-01	Direccion 5	1	1
+6	6	PERSONA	Usuario 6	CC6	user6@correo.com	3200006	1990-01-01	Direccion 6	1	1
+7	7	PERSONA	Usuario 7	CC7	user7@correo.com	3200007	1990-01-01	Direccion 7	1	1
+8	8	PERSONA	Usuario 8	CC8	user8@correo.com	3200008	1990-01-01	Direccion 8	1	1
+9	9	PERSONA	Usuario 9	CC9	user9@correo.com	3200009	1990-01-01	Direccion 9	1	1
+10	10	PERSONA	Usuario 10	CC10	user10@correo.com	32000010	1990-01-01	Direccion 10	1	1
+11	11	PERSONA	Usuario 11	CC11	user11@correo.com	32000011	1990-01-01	Direccion 11	1	1
+12	12	PERSONA	Usuario 12	CC12	user12@correo.com	32000012	1990-01-01	Direccion 12	1	1
+13	13	PERSONA	Usuario 13	CC13	user13@correo.com	32000013	1990-01-01	Direccion 13	1	1
+14	14	PERSONA	Usuario 14	CC14	user14@correo.com	32000014	1990-01-01	Direccion 14	1	1
+15	15	PERSONA	Usuario 15	CC15	user15@correo.com	32000015	1990-01-01	Direccion 15	1	1
+16	16	PERSONA	Usuario 16	CC16	user16@correo.com	32000016	1990-01-01	Direccion 16	1	1
+17	17	PERSONA	Usuario 17	CC17	user17@correo.com	32000017	1990-01-01	Direccion 17	1	1
+18	18	PERSONA	Usuario 18	CC18	user18@correo.com	32000018	1990-01-01	Direccion 18	1	1
+19	19	PERSONA	Usuario 19	CC19	user19@correo.com	32000019	1990-01-01	Direccion 19	1	1
+20	20	PERSONA	Usuario 20	CC20	user20@correo.com	32000020	1990-01-01	Direccion 20	1	1
+21	21	PERSONA	Usuario 21	CC21	user21@correo.com	32000021	1990-01-01	Direccion 21	1	1
+22	22	PERSONA	Usuario 22	CC22	user22@correo.com	32000022	1990-01-01	Direccion 22	1	1
+23	23	PERSONA	Usuario 23	CC23	user23@correo.com	32000023	1990-01-01	Direccion 23	1	1
+24	24	PERSONA	Usuario 24	CC24	user24@correo.com	32000024	1990-01-01	Direccion 24	1	1
+25	25	PERSONA	Usuario 25	CC25	user25@correo.com	32000025	1990-01-01	Direccion 25	1	1
+26	26	PERSONA	Usuario 26	CC26	user26@correo.com	32000026	1990-01-01	Direccion 26	1	1
+27	27	PERSONA	Usuario 27	CC27	user27@correo.com	32000027	1990-01-01	Direccion 27	1	1
+28	28	PERSONA	Usuario 28	CC28	user28@correo.com	32000028	1990-01-01	Direccion 28	1	1
+29	29	PERSONA	Usuario 29	CC29	user29@correo.com	32000029	1990-01-01	Direccion 29	1	1
+30	30	PERSONA	Usuario 30	CC30	user30@correo.com	32000030	1990-01-01	Direccion 30	1	1
+\.
+
+
+--
+-- TOC entry 5145 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: bitacora_operaciones_id_bitacora_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bitacora_operaciones_id_bitacora_seq', 30, true);
+
+
+--
+-- TOC entry 5146 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: cliente_empresa_id_empresa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cliente_empresa_id_empresa_seq', 30, true);
+
+
+--
+-- TOC entry 5147 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: cliente_persona_id_persona_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cliente_persona_id_persona_seq', 30, true);
+
+
+--
+-- TOC entry 5148 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: estado_general_id_estado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.estado_general_id_estado_seq', 30, true);
+
+
+--
+-- TOC entry 5149 (class 0 OID 0)
+-- Dependencies: 231
+-- Name: prestamo_id_prestamo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.prestamo_id_prestamo_seq', 30, true);
+
+
+--
+-- TOC entry 5150 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: rol_sistema_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.rol_sistema_id_rol_seq', 10, true);
+
+
+--
+-- TOC entry 5151 (class 0 OID 0)
+-- Dependencies: 233
+-- Name: transferencia_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.transferencia_id_transferencia_seq', 30, true);
+
+
+--
+-- TOC entry 5152 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: usuario_sistema_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.usuario_sistema_id_usuario_seq', 30, true);
+
+
+--
+-- TOC entry 4953 (class 2606 OID 25058)
+-- Name: bitacora_operaciones bitacora_operaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bitacora_operaciones
+    ADD CONSTRAINT bitacora_operaciones_pkey PRIMARY KEY (id_bitacora);
+
+
+--
+-- TOC entry 4931 (class 2606 OID 24908)
+-- Name: cliente_empresa cliente_empresa_nit_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_empresa
+    ADD CONSTRAINT cliente_empresa_nit_key UNIQUE (nit);
+
+
+--
+-- TOC entry 4933 (class 2606 OID 24906)
+-- Name: cliente_empresa cliente_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_empresa
+    ADD CONSTRAINT cliente_empresa_pkey PRIMARY KEY (id_empresa);
+
+
+--
+-- TOC entry 4925 (class 2606 OID 24886)
+-- Name: cliente_persona cliente_persona_numero_identificacion_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_persona
+    ADD CONSTRAINT cliente_persona_numero_identificacion_key UNIQUE (numero_identificacion);
+
+
+--
+-- TOC entry 4927 (class 2606 OID 24884)
+-- Name: cliente_persona cliente_persona_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_persona
+    ADD CONSTRAINT cliente_persona_pkey PRIMARY KEY (id_persona);
+
+
+--
+-- TOC entry 4940 (class 2606 OID 24962)
+-- Name: cuenta_bancaria cuenta_bancaria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_bancaria
+    ADD CONSTRAINT cuenta_bancaria_pkey PRIMARY KEY (numero_cuenta);
+
+
+--
+-- TOC entry 4920 (class 2606 OID 24854)
+-- Name: estado_general estado_general_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estado_general
+    ADD CONSTRAINT estado_general_pkey PRIMARY KEY (id_estado);
+
+
+--
+-- TOC entry 4946 (class 2606 OID 24988)
+-- Name: prestamo prestamo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.prestamo
+    ADD CONSTRAINT prestamo_pkey PRIMARY KEY (id_prestamo);
+
+
+--
+-- TOC entry 4923 (class 2606 OID 24865)
+-- Name: producto_bancario producto_bancario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.producto_bancario
+    ADD CONSTRAINT producto_bancario_pkey PRIMARY KEY (codigo_producto);
+
+
+--
+-- TOC entry 4916 (class 2606 OID 24844)
+-- Name: rol_sistema rol_sistema_nombre_rol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rol_sistema
+    ADD CONSTRAINT rol_sistema_nombre_rol_key UNIQUE (nombre_rol);
+
+
+--
+-- TOC entry 4918 (class 2606 OID 24842)
+-- Name: rol_sistema rol_sistema_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rol_sistema
+    ADD CONSTRAINT rol_sistema_pkey PRIMARY KEY (id_rol);
+
+
+--
+-- TOC entry 4951 (class 2606 OID 25016)
+-- Name: transferencia transferencia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT transferencia_pkey PRIMARY KEY (id_transferencia);
+
+
+--
+-- TOC entry 4938 (class 2606 OID 24932)
+-- Name: usuario_sistema usuario_sistema_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario_sistema
+    ADD CONSTRAINT usuario_sistema_pkey PRIMARY KEY (id_usuario);
+
+
+--
+-- TOC entry 4954 (class 1259 OID 25064)
+-- Name: idx_bitacora_entidad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_bitacora_entidad ON public.bitacora_operaciones USING btree (entidad_afectada, id_entidad);
+
+
+--
+-- TOC entry 4941 (class 1259 OID 24969)
+-- Name: idx_cuenta_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cuenta_estado ON public.cuenta_bancaria USING btree (id_estado);
+
+
+--
+-- TOC entry 4942 (class 1259 OID 24968)
+-- Name: idx_cuenta_titular; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cuenta_titular ON public.cuenta_bancaria USING btree (id_titular);
+
+
+--
+-- TOC entry 4934 (class 1259 OID 24914)
+-- Name: idx_empresa_nit; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_empresa_nit ON public.cliente_empresa USING btree (nit);
+
+
+--
+-- TOC entry 4921 (class 1259 OID 24855)
+-- Name: idx_estado_tipo_nombre; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_estado_tipo_nombre ON public.estado_general USING btree (tipo_estado, nombre_estado);
+
+
+--
+-- TOC entry 4928 (class 1259 OID 24888)
+-- Name: idx_persona_correo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_persona_correo ON public.cliente_persona USING btree (correo_electronico);
+
+
+--
+-- TOC entry 4929 (class 1259 OID 24887)
+-- Name: idx_persona_identificacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_persona_identificacion ON public.cliente_persona USING btree (numero_identificacion);
+
+
+--
+-- TOC entry 4943 (class 1259 OID 24999)
+-- Name: idx_prestamo_cliente; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_prestamo_cliente ON public.prestamo USING btree (id_cliente_solicitante);
+
+
+--
+-- TOC entry 4944 (class 1259 OID 25000)
+-- Name: idx_prestamo_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_prestamo_estado ON public.prestamo USING btree (id_estado);
+
+
+--
+-- TOC entry 4947 (class 1259 OID 25043)
+-- Name: idx_transferencia_destino; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_transferencia_destino ON public.transferencia USING btree (cuenta_destino);
+
+
+--
+-- TOC entry 4948 (class 1259 OID 25044)
+-- Name: idx_transferencia_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_transferencia_estado ON public.transferencia USING btree (id_estado);
+
+
+--
+-- TOC entry 4949 (class 1259 OID 25042)
+-- Name: idx_transferencia_origen; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_transferencia_origen ON public.transferencia USING btree (cuenta_origen);
+
+
+--
+-- TOC entry 4935 (class 1259 OID 24945)
+-- Name: idx_usuario_identificacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_usuario_identificacion ON public.usuario_sistema USING btree (id_identificacion);
+
+
+--
+-- TOC entry 4936 (class 1259 OID 24944)
+-- Name: idx_usuario_rol; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_usuario_rol ON public.usuario_sistema USING btree (id_rol);
+
+
+--
+-- TOC entry 4959 (class 2606 OID 24994)
+-- Name: prestamo fk_cuenta_desembolso; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.prestamo
+    ADD CONSTRAINT fk_cuenta_desembolso FOREIGN KEY (cuenta_destino_desembolso) REFERENCES public.cuenta_bancaria(numero_cuenta);
+
+
+--
+-- TOC entry 4961 (class 2606 OID 25022)
+-- Name: transferencia fk_cuenta_destino; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT fk_cuenta_destino FOREIGN KEY (cuenta_destino) REFERENCES public.cuenta_bancaria(numero_cuenta);
+
+
+--
+-- TOC entry 4962 (class 2606 OID 25017)
+-- Name: transferencia fk_cuenta_origen; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT fk_cuenta_origen FOREIGN KEY (cuenta_origen) REFERENCES public.cuenta_bancaria(numero_cuenta);
+
+
+--
+-- TOC entry 4958 (class 2606 OID 24963)
+-- Name: cuenta_bancaria fk_estado_cuenta; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_bancaria
+    ADD CONSTRAINT fk_estado_cuenta FOREIGN KEY (id_estado) REFERENCES public.estado_general(id_estado);
+
+
+--
+-- TOC entry 4960 (class 2606 OID 24989)
+-- Name: prestamo fk_estado_prestamo; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.prestamo
+    ADD CONSTRAINT fk_estado_prestamo FOREIGN KEY (id_estado) REFERENCES public.estado_general(id_estado);
+
+
+--
+-- TOC entry 4963 (class 2606 OID 25027)
+-- Name: transferencia fk_estado_transferencia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT fk_estado_transferencia FOREIGN KEY (id_estado) REFERENCES public.estado_general(id_estado);
+
+
+--
+-- TOC entry 4956 (class 2606 OID 24938)
+-- Name: usuario_sistema fk_estado_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario_sistema
+    ADD CONSTRAINT fk_estado_usuario FOREIGN KEY (id_estado) REFERENCES public.estado_general(id_estado);
+
+
+--
+-- TOC entry 4955 (class 2606 OID 24909)
+-- Name: cliente_empresa fk_representante; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente_empresa
+    ADD CONSTRAINT fk_representante FOREIGN KEY (representante_legal_id) REFERENCES public.cliente_persona(id_persona);
+
+
+--
+-- TOC entry 4957 (class 2606 OID 24933)
+-- Name: usuario_sistema fk_rol; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario_sistema
+    ADD CONSTRAINT fk_rol FOREIGN KEY (id_rol) REFERENCES public.rol_sistema(id_rol);
+
+
+--
+-- TOC entry 4964 (class 2606 OID 25037)
+-- Name: transferencia fk_usuario_aprobador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT fk_usuario_aprobador FOREIGN KEY (id_usuario_aprobador) REFERENCES public.usuario_sistema(id_usuario);
+
+
+--
+-- TOC entry 4966 (class 2606 OID 25059)
+-- Name: bitacora_operaciones fk_usuario_bitacora; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bitacora_operaciones
+    ADD CONSTRAINT fk_usuario_bitacora FOREIGN KEY (usuario_responsable) REFERENCES public.usuario_sistema(id_usuario);
+
+
+--
+-- TOC entry 4965 (class 2606 OID 25032)
+-- Name: transferencia fk_usuario_creador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transferencia
+    ADD CONSTRAINT fk_usuario_creador FOREIGN KEY (id_usuario_creador) REFERENCES public.usuario_sistema(id_usuario);
+
+
+-- Completed on 2026-02-25 21:22:08
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict jMVRNDzRanTj23W24aDiIJWPuqNBeZhzknHQ2B9A2yeTvZpB8HLSVU7mxiqRRss
+
