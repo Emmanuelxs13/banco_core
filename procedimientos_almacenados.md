@@ -78,34 +78,32 @@ En incidentes bancarios, el procesamiento controlado suele priorizarse sobre la 
 ## 6. Código SQL del procedimiento (PL/pgSQL)
 
 ```sql
-CREATE OR REPLACE PROCEDURE reconstruir_saldos_post_incidente()
+CREATE OR REPLACE PROCEDURE public.reconstruir_saldos_post_incidente()
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    -- Cursor
+    -- Cursor filtrando solo por transferencias con estado 'APROBADA' (ID 12)
     cur_transferencias CURSOR FOR
         SELECT id_transferencia,
                cuenta_origen,
                cuenta_destino,
-               monto,
-               fecha_creacion
+               monto
         FROM transferencia
-        WHERE fecha_creacion > (
-            SELECT COALESCE(MAX(fecha_operacion), '1900-01-01')
+        WHERE id_estado = 12
+          AND fecha_creacion > (
+            SELECT COALESCE(MAX(fecha_evento), '1900-01-01')
             FROM bitacora_operaciones
+            WHERE accion = 'RECONSTRUCCION_SALDO'
         )
         ORDER BY fecha_creacion;
 
-    -- Variables para almacenar datos del cursor
     v_id_transferencia INT;
     v_cuenta_origen VARCHAR;
     v_cuenta_destino VARCHAR;
     v_monto NUMERIC;
-    v_fecha TIMESTAMP;
 
 BEGIN
-
-    RAISE NOTICE 'Iniciando reconstrucción de saldos...';
+    RAISE NOTICE 'Iniciando reconstrucción de saldos basada en esquema detectado...';
 
     OPEN cur_transferencias;
 
@@ -114,43 +112,43 @@ BEGIN
             v_id_transferencia,
             v_cuenta_origen,
             v_cuenta_destino,
-            v_monto,
-            v_fecha;
+            v_monto;
 
         EXIT WHEN NOT FOUND;
 
-        -- Descontar de cuenta origen
+        -- 1. Descontar de cuenta origen
         UPDATE cuenta_bancaria
         SET saldo_actual = saldo_actual - v_monto
         WHERE numero_cuenta = v_cuenta_origen;
 
-        -- Sumar a cuenta destino
+        -- 2. Sumar a cuenta destino
         UPDATE cuenta_bancaria
         SET saldo_actual = saldo_actual + v_monto
         WHERE numero_cuenta = v_cuenta_destino;
 
-        -- Registrar en bitácora
+        -- 3. Registrar en bitácora (Usando nombres de columna correctos del dump)
         INSERT INTO bitacora_operaciones (
             entidad_afectada,
             id_entidad,
             accion,
-            fecha_operacion,
+            usuario_responsable,
+            fecha_evento,
             detalle
         )
         VALUES (
             'TRANSFERENCIA',
             v_id_transferencia,
             'RECONSTRUCCION_SALDO',
-            NOW(),
-            'Reproceso por incidente de triggers'
+            NULL, -- Puedes poner el ID de un usuario administrador aquí
+            CURRENT_TIMESTAMP,
+            'Reproceso: Ajuste de saldo por fallo de trigger en transferencia ' || v_id_transferencia
         );
 
     END LOOP;
 
     CLOSE cur_transferencias;
 
-    RAISE NOTICE 'Reconstrucción finalizada correctamente';
-
+    RAISE NOTICE 'Reconstrucción finalizada exitosamente.';
 END;
 $$;
 ```
@@ -211,3 +209,151 @@ Su diseño demuestra competencias clave de un DBA/desarrollador en producción:
 - documentación técnica orientada a incidentes reales
 
 En entornos financieros, este enfoque no solo corrige datos: también restituye confianza operativa y evidencia auditada del proceso de remediación.
+
+---
+
+## 10. Guía de Pruebas: Reconstrucción de Saldos Post-Incidente
+
+Esta guía permite probar el procedimiento almacenado `reconstruir_saldos_post_incidente`, validando que los saldos se ajusten correctamente tras un fallo de triggers.
+
+### 10.1 Preparación del escenario (cuentas de prueba)
+
+Se crean dos cuentas de prueba clonando estructura de una cuenta existente para respetar restricciones (`CHECK`, `FK`, formato de datos).
+
+```sql
+-- Insertar Cuenta Origen (inicia con 1000.00)
+INSERT INTO public.cuenta_bancaria (
+    numero_cuenta,
+    tipo_cuenta,
+    id_titular,
+    tipo_titular,
+    saldo_actual,
+    moneda,
+    id_estado,
+    fecha_apertura
+)
+SELECT
+    'TEST-01',
+    tipo_cuenta,
+    id_titular,
+    tipo_titular,
+    1000.00,
+    moneda,
+    id_estado,
+    CURRENT_DATE
+FROM public.cuenta_bancaria
+LIMIT 1;
+
+-- Insertar Cuenta Destino (inicia con 500.00)
+INSERT INTO public.cuenta_bancaria (
+    numero_cuenta,
+    tipo_cuenta,
+    id_titular,
+    tipo_titular,
+    saldo_actual,
+    moneda,
+    id_estado,
+    fecha_apertura
+)
+SELECT
+    'TEST-02',
+    tipo_cuenta,
+    id_titular,
+    tipo_titular,
+    500.00,
+    moneda,
+    id_estado,
+    CURRENT_DATE
+FROM public.cuenta_bancaria
+LIMIT 1;
+```
+
+### 10.2 Creación de transferencia “huérfana”
+
+Se inserta una transferencia con estado `APROBADA` (`id_estado = 12`) para simular una operación registrada sin impacto de trigger.
+
+```sql
+INSERT INTO public.transferencia (
+    cuenta_origen,
+    cuenta_destino,
+    monto,
+    id_estado,
+    fecha_creacion,
+    id_usuario_creador
+)
+VALUES (
+    'TEST-01',
+    'TEST-02',
+    200.00,
+    12,
+    CURRENT_TIMESTAMP,
+    1
+);
+```
+
+### 10.3 Verificación pre-ejecución
+
+Antes de ejecutar el procedimiento, los saldos deben permanecer sin cambios (`TEST-01 = 1000.00`, `TEST-02 = 500.00`).
+
+```sql
+SELECT numero_cuenta, saldo_actual
+FROM public.cuenta_bancaria
+WHERE numero_cuenta IN ('TEST-01', 'TEST-02');
+```
+
+### 10.4 Ejecución del procedimiento
+
+```sql
+CALL public.reconstruir_saldos_post_incidente();
+```
+
+### 10.5 Verificación de resultados (éxito)
+
+Si el procedimiento se ejecutó correctamente:
+
+| Cuenta  | Saldo Esperado | Acción Realizada   |
+| ------- | -------------- | ------------------ |
+| TEST-01 | 800.00         | Se restaron 200.00 |
+| TEST-02 | 700.00         | Se sumaron 200.00  |
+
+Consultar saldos finales:
+
+```sql
+SELECT numero_cuenta, saldo_actual
+FROM public.cuenta_bancaria
+WHERE numero_cuenta IN ('TEST-01', 'TEST-02');
+```
+
+Consultar bitácora:
+
+```sql
+SELECT *
+FROM public.bitacora_operaciones
+WHERE accion = 'RECONSTRUCCION_SALDO'
+ORDER BY fecha_evento DESC
+LIMIT 1;
+```
+
+### 10.6 Limpieza de datos
+
+Una vez finalizada la prueba, eliminar los registros creados para mantener la base limpia.
+
+```sql
+DELETE FROM public.bitacora_operaciones
+WHERE detalle LIKE '%TEST%';
+
+DELETE FROM public.transferencia
+WHERE cuenta_origen = 'TEST-01'
+   OR cuenta_destino = 'TEST-02';
+
+DELETE FROM public.cuenta_bancaria
+WHERE numero_cuenta IN ('TEST-01', 'TEST-02');
+```
+
+> **Nota:** Si el `INSERT` de transferencia falla por `id_usuario_creador`, valida IDs disponibles con:
+
+```sql
+SELECT id_usuario
+FROM public.usuario_sistema
+LIMIT 1;
+```
