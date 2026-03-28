@@ -17,6 +17,7 @@
 8. [Triggers Implementados](#8-triggers-implementados)
 9. [Consultas SQL](#9-consultas-sql)
 10. [Conclusión](#10-conclusión)
+11. [Documentación Complementaria](#11-documentación-complementaria)
 
 ---
 
@@ -33,6 +34,10 @@ Diseño e implementación de una base de datos relacional en **PostgreSQL 18** p
 | **Préstamos**         | Flujo completo de solicitud, aprobación y desembolso           |
 | **Transferencias**    | Movimientos entre cuentas con control de fondos y autorización |
 | **Bitácora**          | Registro de auditoría de todas las operaciones críticas        |
+
+## 11. Documentación Complementaria
+
+- [Procedimiento de recuperación post incidente](procedimientos_almacenados.md)
 
 ---
 
